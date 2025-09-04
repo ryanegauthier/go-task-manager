@@ -4,7 +4,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: go-portfolio-postgres
+    container_name: go-task-manager-postgres
     environment:
       POSTGRES_DB: taskmanager
       POSTGRES_USER: postgres
@@ -16,7 +16,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - go-portfolio-network
+      - go-task-manager-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -26,7 +26,7 @@ services:
   # Go Application
   app:
     build: .
-    container_name: go-portfolio-app
+    container_name: go-task-manager-app
     ports:
       - "8080:8080"
     environment:
@@ -42,19 +42,19 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - go-portfolio-network
+      - go-task-manager-network
     restart: unless-stopped
 
   # Redis for caching (optional for Phase 3)
   redis:
     image: redis:7-alpine
-    container_name: go-portfolio-redis
+    container_name: go-task-manager-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - go-portfolio-network
+      - go-task-manager-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -68,5 +68,5 @@ volumes:
     driver: local
 
 networks:
-  go-portfolio-network:
+  go-task-manager-network:
     driver: bridge

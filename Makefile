@@ -162,13 +162,13 @@ load-test:
 # Backup database
 db-backup:
 	@echo "Creating database backup..."
-	docker exec go-portfolio-postgres pg_dump -U postgres taskmanager > backup_$(shell date +%Y%m%d_%H%M%S).sql
+	docker exec go-task-manager-postgres pg_dump -U postgres taskmanager > backup_$(shell date +%Y%m%d_%H%M%S).sql
 
 # Restore database
 db-restore:
 	@echo "Restoring database from backup..."
 	@read -p "Enter backup file name: " backup_file; \
-	docker exec -i go-portfolio-postgres psql -U postgres taskmanager < $$backup_file
+	docker exec -i go-task-manager-postgres psql -U postgres taskmanager < $$backup_file
 
 # Monitor logs
 logs:
@@ -184,7 +184,7 @@ db-logs:
 health:
 	@echo "Checking service health..."
 	@curl -f http://localhost:8080/ || echo "Application not responding"
-	@docker exec go-portfolio-postgres pg_isready -U postgres || echo "Database not responding"
+	@docker exec go-task-manager-postgres pg_isready -U postgres || echo "Database not responding"
 
 # Full development workflow
 dev: deps db-setup run

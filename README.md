@@ -74,8 +74,8 @@ A comprehensive full-stack Go application showcasing modern web development prac
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ryanegauthier/go-with-tests.git
-   cd go-with-tests
+   git clone https://github.com/ryanegauthier/go-task-manager.git
+   cd go-task-manager
    ```
 
 2. **Setup with Docker Compose (Recommended)**
@@ -128,7 +128,7 @@ make health       # Check service health
 ## 📁 **Project Structure**
 
 ```
-go-with-tests/
+go-task-manager/
 ├── main.go              # Main application entry point
 ├── auth.go              # JWT authentication middleware
 ├── main_test.go         # Comprehensive test suite
@@ -246,13 +246,13 @@ docker-compose down -v --remove-orphans
 ### **Database Management**
 ```bash
 # Create database backup
-docker exec go-portfolio-postgres pg_dump -U postgres taskmanager > backup.sql
+docker exec go-task-manager-postgres pg_dump -U postgres taskmanager > backup.sql
 
 # Restore database
-docker exec -i go-portfolio-postgres psql -U postgres taskmanager < backup.sql
+docker exec -i go-task-manager-postgres psql -U postgres taskmanager < backup.sql
 
 # Access database shell
-docker exec -it go-portfolio-postgres psql -U postgres taskmanager
+docker exec -it go-task-manager-postgres psql -U postgres taskmanager
 ```
 
 ## 📊 **API Documentation**
