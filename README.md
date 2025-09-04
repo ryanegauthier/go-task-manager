@@ -100,6 +100,15 @@ A comprehensive full-stack Go application showcasing modern web development prac
    - Open your browser to `http://localhost:8080`
    - Register a new account or login with existing credentials
 
+### **🌐 Live Deployment**
+
+**Try the live application**: [Go Task Manager on Render](https://go-task-manager.onrender.com)
+
+- ✅ **Live Demo**: Fully functional task management application
+- ✅ **Production Database**: Managed PostgreSQL database
+- ✅ **HTTPS Secure**: SSL certificate included
+- ✅ **Auto-Deploy**: Updates automatically on code changes
+
 ### **Using Makefile Commands**
 
 ```bash
@@ -136,10 +145,13 @@ go-task-manager/
 ├── go.sum               # Dependency checksums
 ├── Dockerfile           # Container configuration
 ├── docker-compose.yml   # Multi-service setup
+├── render.yaml          # Render.com deployment config
+├── .dockerignore        # Docker ignore file
 ├── Makefile             # Development tasks
 ├── .env                 # Environment variables
 ├── .gitignore           # Version control exclusions
 ├── README.md            # Project documentation
+├── DEPLOYMENT.md        # Render deployment guide
 ├── init.sql             # Database initialization
 ├── templates/
 │   └── index.html       # Main application template
@@ -322,6 +334,7 @@ curl -X POST http://localhost:8080/api/tasks \
 - ✅ **Frontend Development**: HTML5, CSS3, JavaScript
 - ✅ **Testing**: Comprehensive test coverage
 - ✅ **DevOps**: Docker and containerization
+- ✅ **Cloud Deployment**: Render.com production deployment
 - ✅ **Security**: Industry-standard security practices
 
 ### **Development Practices**
@@ -339,6 +352,8 @@ curl -X POST http://localhost:8080/api/tasks \
 - ✅ **Health Monitoring**: Service health checks
 - ✅ **Backup Strategy**: Database backup procedures
 - ✅ **Performance Optimization**: Connection pooling
+- ✅ **Cloud Deployment**: Production-ready Render.com deployment
+- ✅ **HTTPS Security**: SSL certificate and secure connections
 
 ## 🚀 **Future Enhancements**
 

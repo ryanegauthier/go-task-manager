@@ -1,0 +1,53 @@
+# Render.com Deployment Configuration for Go Task Manager
+# This file defines the services to be deployed on Render
+
+databases:
+  - name: go-task-manager-db
+    databaseName: taskmanager
+    user: taskmanager_user
+    plan: free
+
+services:
+  - type: web
+    name: go-task-manager
+    runtime: go
+    plan: free
+    buildCommand: go mod download && go build -o bin/go-task-manager .
+    startCommand: ./bin/go-task-manager
+    envVars:
+      - key: GIN_MODE
+        value: release
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_HOST
+        fromDatabase:
+          name: go-task-manager-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: go-task-manager-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: go-task-manager-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: go-task-manager-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: go-task-manager-db
+          property: password
+      - key: DB_SSLMODE
+        value: require
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: CORS_METHODS
+        value: "GET,POST,PUT,DELETE,OPTIONS"
+      - key: CORS_HEADERS
+        value: "Origin,Content-Type,Content-Length,Accept-Encoding,X-CSRF-Token,Authorization"
+    healthCheckPath: /
+    autoDeploy: true

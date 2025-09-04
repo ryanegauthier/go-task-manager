@@ -1,8 +1,11 @@
+# Multi-stage build for Go Task Manager
+# Optimized for Render.com deployment
+
 # Build stage
 FROM golang:1.22-alpine AS builder
 
-# Install git and ca-certificates (needed for go mod download)
-RUN apk add --no-cache git ca-certificates
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
 
 # Set working directory
 WORKDIR /app
@@ -17,13 +20,13 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o bin/go-task-manager .
 
-# Final stage
+# Production stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install runtime dependencies
+RUN apk --no-cache add ca-certificates tzdata
 
 # Create non-root user
 RUN addgroup -g 1001 -S appgroup && \
@@ -32,8 +35,8 @@ RUN addgroup -g 1001 -S appgroup && \
 # Set working directory
 WORKDIR /app
 
-# Copy the binary from builder stage
-COPY --from=builder /app/main .
+# Copy binary from builder stage
+COPY --from=builder /app/bin/go-task-manager .
 
 # Copy templates and static files
 COPY --from=builder /app/templates ./templates
@@ -46,7 +49,11 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Expose port
-EXPOSE 8080
+EXPOSE 10000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:10000/ || exit 1
 
 # Run the application
-CMD ["./main"]
+CMD ["./go-task-manager"]
