@@ -1,4 +1,4 @@
-// Go Portfolio App - Frontend JavaScript
+// Go Portfolio App - Frontend JavaScript (Phase 2)
 
 class TaskManager {
     constructor() {
@@ -12,6 +12,7 @@ class TaskManager {
         this.setupEventListeners();
         this.checkAuthStatus();
         this.loadTasks();
+        this.setupKeyboardShortcuts();
     }
 
     setupEventListeners() {
@@ -30,6 +31,114 @@ class TaskManager {
         document.getElementById('createTaskForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.createTask();
+        });
+
+        // Add real-time form validation
+        this.setupFormValidation();
+    }
+
+    setupFormValidation() {
+        // Username validation
+        const usernameInputs = document.querySelectorAll('input[name="username"]');
+        usernameInputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length < 3) {
+                    e.target.classList.add('border-red-500');
+                    e.target.classList.remove('border-green-500');
+                } else {
+                    e.target.classList.remove('border-red-500');
+                    e.target.classList.add('border-green-500');
+                }
+            });
+        });
+
+        // Email validation
+        const emailInput = document.getElementById('registerEmail');
+        if (emailInput) {
+            emailInput.addEventListener('input', (e) => {
+                const email = e.target.value;
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailRegex.test(email)) {
+                    e.target.classList.remove('border-red-500');
+                    e.target.classList.add('border-green-500');
+                } else {
+                    e.target.classList.add('border-red-500');
+                    e.target.classList.remove('border-green-500');
+                }
+            });
+        }
+
+        // Password strength indicator
+        const passwordInputs = document.querySelectorAll('input[type="password"]');
+        passwordInputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                const password = e.target.value;
+                const strength = this.calculatePasswordStrength(password);
+                this.updatePasswordStrengthIndicator(input, strength);
+            });
+        });
+    }
+
+    calculatePasswordStrength(password) {
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[a-z]/.test(password)) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+        return Math.min(score, 5);
+    }
+
+    updatePasswordStrengthIndicator(input, strength) {
+        const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+        const strengthTexts = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+        
+        // Remove existing indicator
+        const existingIndicator = input.parentNode.querySelector('.password-strength');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+
+        if (input.value.length > 0) {
+            const indicator = document.createElement('div');
+            indicator.className = 'password-strength mt-1 text-xs';
+            indicator.innerHTML = `
+                <div class="flex items-center">
+                    <div class="flex-1 bg-gray-200 rounded-full h-1 mr-2">
+                        <div class="h-1 rounded-full ${strengthColors[strength - 1] || 'bg-gray-200'}" 
+                             style="width: ${(strength / 5) * 100}%"></div>
+                    </div>
+                    <span class="text-gray-600">${strengthTexts[strength - 1] || 'Very Weak'}</span>
+                </div>
+            `;
+            input.parentNode.appendChild(indicator);
+        }
+    }
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter to submit forms
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.closest('form')) {
+                    activeElement.closest('form').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            // Escape to close modals or cancel operations
+            if (e.key === 'Escape') {
+                this.hideAllModals();
+            }
+
+            // Ctrl/Cmd + K to focus task input
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const taskInput = document.getElementById('taskTitle');
+                if (taskInput) {
+                    taskInput.focus();
+                }
+            }
         });
     }
 
@@ -50,6 +159,21 @@ class TaskManager {
         document.getElementById('authForms').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         document.getElementById('userInfo').textContent = this.user.username || 'User';
+        
+        // Add welcome animation
+        this.animateWelcome();
+    }
+
+    animateWelcome() {
+        const welcomeElement = document.getElementById('mainApp');
+        welcomeElement.style.opacity = '0';
+        welcomeElement.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            welcomeElement.style.transition = 'all 0.5s ease-out';
+            welcomeElement.style.opacity = '1';
+            welcomeElement.style.transform = 'translateY(0)';
+        }, 100);
     }
 
     async makeRequest(url, options = {}) {
@@ -87,6 +211,11 @@ class TaskManager {
         const username = document.getElementById('loginUsername').value;
         const password = document.getElementById('loginPassword').value;
 
+        if (!username || !password) {
+            this.showToast('Error', 'Please fill in all fields', 'error');
+            return;
+        }
+
         try {
             const data = await this.makeRequest('/api/login', {
                 method: 'POST',
@@ -111,6 +240,16 @@ class TaskManager {
         const username = document.getElementById('registerUsername').value;
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
+
+        if (!username || !email || !password) {
+            this.showToast('Error', 'Please fill in all fields', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showToast('Error', 'Password must be at least 6 characters', 'error');
+            return;
+        }
 
         try {
             const data = await this.makeRequest('/api/register', {
@@ -153,10 +292,15 @@ class TaskManager {
         const title = document.getElementById('taskTitle').value;
         const description = document.getElementById('taskDescription').value;
 
+        if (!title.trim()) {
+            this.showToast('Error', 'Task title is required', 'error');
+            return;
+        }
+
         try {
             const task = await this.makeRequest('/api/tasks', {
                 method: 'POST',
-                body: JSON.stringify({ title, description }),
+                body: JSON.stringify({ title: title.trim(), description: description.trim() }),
             });
 
             this.tasks.push(task);
@@ -164,6 +308,9 @@ class TaskManager {
             
             // Clear form
             document.getElementById('createTaskForm').reset();
+            
+            // Reset password strength indicators
+            document.querySelectorAll('.password-strength').forEach(el => el.remove());
             
             this.showToast('Success', 'Task created successfully!', 'success');
         } catch (error) {
@@ -216,30 +363,60 @@ class TaskManager {
                 <div class="text-center py-8 text-gray-500">
                     <i class="fas fa-clipboard-list text-4xl mb-4"></i>
                     <p>No tasks yet. Create your first task!</p>
+                    <p class="text-sm mt-2">Use Ctrl+K to quickly add a task</p>
                 </div>
             `;
             return;
         }
 
-        this.tasks.forEach(task => {
+        // Sort tasks by creation date (newest first)
+        const sortedTasks = [...this.tasks].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        sortedTasks.forEach(task => {
             const taskElement = this.createTaskElement(task);
             taskList.appendChild(taskElement);
         });
+
+        // Add task count
+        this.updateTaskCount();
+    }
+
+    updateTaskCount() {
+        const completedTasks = this.tasks.filter(t => t.completed).length;
+        const totalTasks = this.tasks.length;
+        const pendingTasks = totalTasks - completedTasks;
+        
+        // Update task count in header
+        const countElement = document.getElementById('taskCount');
+        if (countElement) {
+            countElement.textContent = `${completedTasks}/${totalTasks} completed`;
+        }
+        
+        // Update stats cards
+        const totalTasksElement = document.getElementById('totalTasks');
+        const completedTasksElement = document.getElementById('completedTasks');
+        const pendingTasksElement = document.getElementById('pendingTasks');
+        
+        if (totalTasksElement) totalTasksElement.textContent = totalTasks;
+        if (completedTasksElement) completedTasksElement.textContent = completedTasks;
+        if (pendingTasksElement) pendingTasksElement.textContent = pendingTasks;
     }
 
     createTaskElement(task) {
         const div = document.createElement('div');
-        div.className = 'task-card bg-gray-50 rounded-lg p-4 border border-gray-200';
+        div.className = 'task-card bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-all duration-200';
         div.innerHTML = `
             <div class="flex justify-between items-start mb-3">
                 <h4 class="font-semibold text-gray-800 ${task.completed ? 'line-through text-gray-500' : ''}">${task.title}</h4>
                 <div class="flex space-x-2">
                     <button onclick="taskManager.editTask(${task.id})" 
-                            class="text-blue-600 hover:text-blue-800 text-sm">
+                            class="text-blue-600 hover:text-blue-800 text-sm p-1 rounded hover:bg-blue-100 transition-colors">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button onclick="taskManager.deleteTask(${task.id})" 
-                            class="text-red-600 hover:text-red-800 text-sm">
+                            class="text-red-600 hover:text-red-800 text-sm p-1 rounded hover:bg-red-100 transition-colors">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -263,15 +440,68 @@ class TaskManager {
         const task = this.tasks.find(t => t.id === taskId);
         if (!task) return;
 
-        const newTitle = prompt('Enter new title:', task.title);
-        if (!newTitle) return;
+        // Create a modal for editing
+        this.showEditModal(task);
+    }
 
-        const newDescription = prompt('Enter new description:', task.description || '');
+    showEditModal(task) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <h3 class="text-lg font-semibold mb-4">Edit Task</h3>
+                <form id="editTaskForm">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Title</label>
+                        <input type="text" id="editTaskTitle" value="${task.title}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                        <textarea id="editTaskDescription" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">${task.description || ''}</textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="taskManager.hideEditModal()" 
+                                class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save</button>
+                    </div>
+                </form>
+            </div>
+        `;
 
-        await this.updateTask(taskId, {
-            title: newTitle,
-            description: newDescription,
+        document.body.appendChild(modal);
+
+        // Handle form submission
+        document.getElementById('editTaskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newTitle = document.getElementById('editTaskTitle').value;
+            const newDescription = document.getElementById('editTaskDescription').value;
+
+            await this.updateTask(task.id, {
+                title: newTitle,
+                description: newDescription,
+            });
+
+            this.hideEditModal();
         });
+
+        // Focus on title input
+        setTimeout(() => {
+            document.getElementById('editTaskTitle').focus();
+        }, 100);
+    }
+
+    hideEditModal() {
+        const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    hideAllModals() {
+        this.hideEditModal();
     }
 
     async toggleTaskComplete(taskId, completed) {
@@ -352,20 +582,4 @@ document.addEventListener('DOMContentLoaded', () => {
 // Add some utility functions
 window.addEventListener('beforeunload', () => {
     // Clean up any pending operations
-});
-
-// Handle keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + Enter to submit forms
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        const activeElement = document.activeElement;
-        if (activeElement && activeElement.closest('form')) {
-            activeElement.closest('form').dispatchEvent(new Event('submit'));
-        }
-    }
-    
-    // Escape to close modals or cancel operations
-    if (e.key === 'Escape') {
-        // Add escape key functionality here
-    }
 });

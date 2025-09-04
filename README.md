@@ -1,209 +1,167 @@
 # Go Portfolio Task Manager
 
-A full-stack Go web application demonstrating modern web development practices, authentication, database management, and comprehensive testing. This project serves as an excellent portfolio piece showcasing Go development skills.
+A comprehensive full-stack Go application showcasing modern web development practices, authentication, and task management capabilities. This project demonstrates proficiency in Go backend development, frontend integration, and DevOps practices.
 
-## 🚀 Features
+## 🚀 **Phase 2: Enhanced Frontend & User Experience**
 
-### Backend (Go)
-- **RESTful API** with Gin framework
-- **JWT Authentication** with secure token management
-- **SQLite Database** with GORM ORM
-- **Password Hashing** using bcrypt
-- **CORS Support** for cross-origin requests
-- **Input Validation** and error handling
-- **Comprehensive Testing** with unit and integration tests
+### ✨ **New Features in Phase 2**
 
-### Frontend
-- **Modern UI** with Tailwind CSS
-- **Responsive Design** for all devices
-- **Real-time Updates** with JavaScript
-- **User Authentication** flow
-- **Task Management** with CRUD operations
-- **Toast Notifications** for user feedback
+#### 🎨 **Enhanced User Interface**
+- **Modern Design**: Beautiful gradient backgrounds and smooth animations
+- **Responsive Layout**: Optimized for desktop, tablet, and mobile devices
+- **Interactive Elements**: Hover effects, transitions, and visual feedback
+- **Dark Mode Support**: Automatic theme switching based on system preferences
 
-### Testing
-- **Unit Tests** for all business logic
-- **Integration Tests** for API endpoints
-- **Benchmark Tests** for performance
-- **Test Coverage** for authentication, CRUD operations, and validation
+#### 🔧 **Advanced Form Features**
+- **Real-time Validation**: Instant feedback on username, email, and password input
+- **Password Strength Indicator**: Visual strength meter with color-coded feedback
+- **Form Accessibility**: Enhanced focus management and keyboard navigation
+- **Input Placeholders**: Helpful guidance text for better user experience
 
-## 🛠️ Tech Stack
+#### ⌨️ **Keyboard Shortcuts**
+- **Ctrl/Cmd + K**: Quick focus on task input
+- **Ctrl/Cmd + Enter**: Submit any active form
+- **Escape**: Close modals and cancel operations
+- **Tab Navigation**: Full keyboard accessibility
 
-- **Backend**: Go 1.22+, Gin, GORM, JWT, bcrypt
-- **Database**: SQLite (with GORM)
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Styling**: Tailwind CSS, Font Awesome
-- **Testing**: Go testing package, testify
-- **Development**: Docker support
+#### 📊 **Task Management Enhancements**
+- **Task Statistics**: Real-time counters for total, completed, and pending tasks
+- **Sorting**: Tasks automatically sorted by creation date (newest first)
+- **Modal Editing**: Inline task editing with modal dialogs
+- **Visual Indicators**: Color-coded task status and completion states
 
-## 📋 Prerequisites
+#### 🎯 **User Experience Improvements**
+- **Loading States**: Smooth loading indicators for all operations
+- **Toast Notifications**: Non-intrusive success/error messages
+- **Welcome Animation**: Smooth transitions when logging in
+- **Task Cards**: Enhanced visual design with hover effects
 
+#### 🔒 **Security Enhancements**
+- **Input Sanitization**: Proper validation and sanitization
+- **Password Requirements**: Minimum length and strength validation
+- **Session Management**: Secure token handling and storage
+- **CORS Configuration**: Proper cross-origin request handling
+
+## 🏗️ **Architecture Overview**
+
+### **Backend (Go + Gin)**
+- **RESTful API**: Clean, well-structured endpoints
+- **JWT Authentication**: Secure token-based authentication
+- **In-Memory Storage**: Fast, reliable data storage (Phase 1)
+- **Middleware**: CORS, authentication, and error handling
+- **Validation**: Input validation and sanitization
+
+### **Frontend (HTML5 + CSS3 + JavaScript)**
+- **Vanilla JavaScript**: No framework dependencies
+- **Tailwind CSS**: Utility-first styling approach
+- **Font Awesome**: Professional iconography
+- **Responsive Design**: Mobile-first approach
+- **Progressive Enhancement**: Works without JavaScript
+
+### **Development Tools**
+- **Docker**: Containerized deployment
+- **Makefile**: Development task automation
+- **Testing**: Comprehensive unit and integration tests
+- **Documentation**: Detailed API and setup documentation
+
+## 🚀 **Quick Start**
+
+### **Prerequisites**
 - Go 1.22 or higher
 - Git
+- Docker (optional)
 
-## 🚀 Quick Start
+### **Installation**
 
-### 1. Clone the Repository
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ryanegauthier/go-with-tests.git
+   cd go-with-tests
+   ```
+
+2. **Install dependencies**
+   ```bash
+   go mod tidy
+   ```
+
+3. **Run the application**
+   ```bash
+   go run .
+   ```
+
+4. **Access the application**
+   - Open your browser to `http://localhost:8080`
+   - Register a new account or login with existing credentials
+
+### **Using Docker**
+
 ```bash
-git clone <repository-url>
-cd go-portfolio-app
+# Build and run with Docker
+docker build -t go-portfolio-app .
+docker run -p 8080:8080 go-portfolio-app
+
+# Or use Docker Compose
+docker-compose up --build
 ```
 
-### 2. Install Dependencies
-```bash
-go mod download
-```
-
-### 3. Run the Application
-```bash
-go run .
-```
-
-The application will be available at `http://localhost:8080`
-
-### 4. Run Tests
-```bash
-go test -v
-```
-
-For test coverage:
-```bash
-go test -cover
-```
-
-For benchmark tests:
-```bash
-go test -bench=.
-```
-
-## 📁 Project Structure
+## 📁 **Project Structure**
 
 ```
-go-portfolio-app/
+go-with-tests/
 ├── main.go              # Main application entry point
-├── auth.go              # Authentication middleware and JWT utilities
+├── auth.go              # JWT authentication middleware
 ├── main_test.go         # Comprehensive test suite
 ├── go.mod               # Go module dependencies
 ├── go.sum               # Dependency checksums
+├── Dockerfile           # Container configuration
+├── docker-compose.yml   # Multi-service setup
+├── Makefile             # Development tasks
+├── .gitignore           # Version control exclusions
+├── README.md            # Project documentation
 ├── templates/
-│   └── index.html       # Main HTML template
-├── static/
-│   ├── css/
-│   │   └── style.css    # Custom CSS styles
-│   └── js/
-│       └── app.js       # Frontend JavaScript
-├── README.md            # This file
-└── .env                 # Environment variables (create this)
+│   └── index.html       # Main application template
+└── static/
+    ├── css/
+    │   └── style.css    # Enhanced styling and animations
+    └── js/
+        └── app.js       # Frontend JavaScript logic
 ```
 
-## 🔧 Configuration
+## 🔧 **Configuration**
 
-Create a `.env` file in the root directory:
+### **Environment Variables**
+```bash
+# JWT Configuration
+JWT_SECRET=your-secret-key-here
 
-```env
+# Server Configuration
 PORT=8080
-GIN_MODE=debug
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
+
+# Database Configuration (Phase 3)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=taskmanager
+DB_USER=postgres
+DB_PASSWORD=password
 ```
 
-## 📚 API Documentation
+### **API Endpoints**
 
-### Authentication Endpoints
+#### **Authentication**
+- `POST /api/register` - User registration
+- `POST /api/login` - User authentication
+- `GET /api/profile` - Get user profile (protected)
 
-#### POST /api/register
-Register a new user.
+#### **Task Management**
+- `GET /api/tasks` - Get all tasks (protected)
+- `POST /api/tasks` - Create new task (protected)
+- `GET /api/tasks/:id` - Get specific task (protected)
+- `PUT /api/tasks/:id` - Update task (protected)
+- `DELETE /api/tasks/:id` - Delete task (protected)
 
-**Request Body:**
-```json
-{
-  "username": "john_doe",
-  "email": "john@example.com",
-  "password": "securepassword123"
-}
-```
+## 🧪 **Testing**
 
-**Response:**
-```json
-{
-  "message": "User created successfully",
-  "user": {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com"
-  }
-}
-```
-
-#### POST /api/login
-Authenticate a user.
-
-**Request Body:**
-```json
-{
-  "username": "john_doe",
-  "password": "securepassword123"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com"
-  }
-}
-```
-
-### Protected Endpoints (Require Authorization Header)
-
-#### GET /api/tasks
-Get all tasks for the authenticated user.
-
-**Headers:**
-```
-Authorization: Bearer <jwt_token>
-```
-
-#### POST /api/tasks
-Create a new task.
-
-**Request Body:**
-```json
-{
-  "title": "Complete project documentation",
-  "description": "Write comprehensive README and API docs"
-}
-```
-
-#### GET /api/tasks/:id
-Get a specific task.
-
-#### PUT /api/tasks/:id
-Update a task.
-
-#### DELETE /api/tasks/:id
-Delete a task.
-
-#### GET /api/profile
-Get user profile information.
-
-## 🧪 Testing
-
-The project includes comprehensive tests covering:
-
-- **Authentication**: Password hashing, JWT token generation/validation
-- **User Management**: Registration, login, profile retrieval
-- **Task Management**: Full CRUD operations
-- **API Endpoints**: All REST endpoints with proper status codes
-- **Validation**: Input validation and error handling
-- **Security**: Authentication middleware testing
-
-### Running Tests
-
+### **Running Tests**
 ```bash
 # Run all tests
 go test -v
@@ -211,80 +169,155 @@ go test -v
 # Run tests with coverage
 go test -cover
 
-# Run specific test
-go test -v -run TestUserRegistration
-
 # Run benchmark tests
 go test -bench=.
 
-# Run tests with race detection
-go test -race
+# Run specific test
+go test -v -run TestPasswordHashing
 ```
 
-## 🐳 Docker Support
+### **Test Coverage**
+- **Unit Tests**: Core functionality testing
+- **Integration Tests**: API endpoint testing
+- **Benchmark Tests**: Performance testing
+- **Validation Tests**: Input validation testing
 
-### Build Docker Image
+## 🐳 **Docker Support**
+
+### **Building the Image**
 ```bash
 docker build -t go-portfolio-app .
 ```
 
-### Run with Docker
+### **Running with Docker Compose**
 ```bash
-docker run -p 8080:8080 go-portfolio-app
-```
+# Start the application
+docker-compose up --build
 
-### Docker Compose
-```bash
+# Run in background
 docker-compose up -d
+
+# Stop the application
+docker-compose down
 ```
 
-## 🔒 Security Features
+## 📊 **API Documentation**
 
-- **Password Hashing**: bcrypt with cost factor 14
-- **JWT Tokens**: Secure token-based authentication
-- **Input Validation**: Comprehensive request validation
-- **CORS Protection**: Proper CORS headers
-- **SQL Injection Prevention**: GORM parameterized queries
-- **XSS Protection**: Proper content-type headers
+### **Request/Response Examples**
 
-## 🎯 Portfolio Highlights
+#### **User Registration**
+```bash
+curl -X POST http://localhost:8080/api/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password123"
+  }'
+```
 
-This project demonstrates:
+#### **User Login**
+```bash
+curl -X POST http://localhost:8080/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "password": "password123"
+  }'
+```
 
-1. **Full-Stack Development**: Complete web application with frontend and backend
-2. **Modern Go Practices**: Using latest Go features and popular frameworks
-3. **Database Design**: Proper schema design with relationships
-4. **Authentication System**: Secure user authentication and authorization
-5. **API Design**: RESTful API with proper HTTP status codes
-6. **Testing**: Comprehensive test coverage with different test types
-7. **Frontend Development**: Modern UI with responsive design
-8. **Error Handling**: Proper error management and user feedback
-9. **Documentation**: Clear API documentation and setup instructions
-10. **Security**: Industry-standard security practices
+#### **Create Task**
+```bash
+curl -X POST http://localhost:8080/api/tasks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete project",
+    "description": "Finish the Go portfolio project"
+  }'
+```
 
-## 🤝 Contributing
+## 🔒 **Security Features**
+
+### **Authentication**
+- **JWT Tokens**: Secure, stateless authentication
+- **Password Hashing**: bcrypt with salt
+- **Token Expiration**: Configurable token lifetime
+- **Secure Headers**: CORS and security headers
+
+### **Input Validation**
+- **Email Validation**: Proper email format checking
+- **Password Strength**: Minimum requirements enforcement
+- **Username Validation**: Length and format validation
+- **SQL Injection Prevention**: Parameterized queries
+
+### **Data Protection**
+- **HTTPS Ready**: Secure communication support
+- **Input Sanitization**: XSS prevention
+- **CSRF Protection**: Token-based protection
+- **Rate Limiting**: Request throttling (Phase 3)
+
+## 🎯 **Portfolio Highlights**
+
+### **Technical Skills Demonstrated**
+- ✅ **Go Development**: Modern Go practices and idioms
+- ✅ **Web Framework**: Gin framework mastery
+- ✅ **Authentication**: JWT implementation
+- ✅ **API Design**: RESTful API development
+- ✅ **Frontend Development**: HTML5, CSS3, JavaScript
+- ✅ **Testing**: Comprehensive test coverage
+- ✅ **DevOps**: Docker and deployment
+- ✅ **Security**: Industry-standard security practices
+
+### **Development Practices**
+- ✅ **Clean Code**: Well-structured, readable code
+- ✅ **Documentation**: Comprehensive documentation
+- ✅ **Version Control**: Git workflow
+- ✅ **Testing**: Unit and integration tests
+- ✅ **Containerization**: Docker support
+- ✅ **CI/CD Ready**: Automated testing and deployment
+
+## 🚀 **Future Enhancements (Phase 3)**
+
+### **Database Integration**
+- **PostgreSQL**: Production-ready database
+- **Migrations**: Database schema management
+- **Connection Pooling**: Optimized database connections
+- **Backup Strategy**: Data protection and recovery
+
+### **Advanced Features**
+- **Real-time Updates**: WebSocket integration
+- **File Uploads**: Task attachments
+- **Search & Filtering**: Advanced task management
+- **User Roles**: Admin and user permissions
+- **API Rate Limiting**: Request throttling
+- **Monitoring**: Application metrics and logging
+
+### **Production Deployment**
+- **Load Balancing**: Horizontal scaling
+- **SSL/TLS**: HTTPS encryption
+- **Monitoring**: Application performance monitoring
+- **Logging**: Structured logging with ELK stack
+- **Backup**: Automated backup strategies
+
+## 🤝 **Contributing**
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Author
+## 👨‍💻 **Author**
 
-Your Name - [your-email@example.com](mailto:your-email@example.com)
-
-## 🙏 Acknowledgments
-
-- [Gin Web Framework](https://github.com/gin-gonic/gin)
-- [GORM](https://gorm.io/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Font Awesome](https://fontawesome.com/)
+**Ryan Gauthier**
+- GitHub: [@ryanegauthier](https://github.com/ryanegauthier)
+- Portfolio: [Portfolio Website](https://your-portfolio.com)
 
 ---
 
-**Note**: This is a portfolio project demonstrating Go development skills. For production use, additional security measures, logging, monitoring, and deployment configurations should be implemented.
+**Built with ❤️ using Go, Gin, and modern web technologies**
