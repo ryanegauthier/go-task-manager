@@ -1,36 +1,72 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: go-portfolio-postgres
+    environment:
+      POSTGRES_DB: taskmanager
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - go-portfolio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Go Application
   app:
     build: .
+    container_name: go-portfolio-app
     ports:
       - "8080:8080"
     environment:
-      - PORT=8080
-      - GIN_MODE=debug
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=taskmanager
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_SSLMODE=disable
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
-    volumes:
-      - ./portfolio.db:/app/portfolio.db
+      - PORT=8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - go-portfolio-network
     restart: unless-stopped
+
+  # Redis for caching (optional for Phase 3)
+  redis:
+    image: redis:7-alpine
+    container_name: go-portfolio-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - go-portfolio-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Optional: Add a database service for production
-  # postgres:
-  #   image: postgres:15-alpine
-  #   environment:
-  #     POSTGRES_DB: portfolio_app
-  #     POSTGRES_USER: app_user
-  #     POSTGRES_PASSWORD: secure_password
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
-  #   restart: unless-stopped
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
 
-# volumes:
-#   postgres_data:
+networks:
+  go-portfolio-network:
+    driver: bridge

@@ -5,63 +5,58 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // User model
 type User struct {
-	ID        uint      `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	Username  string    `json:"username" gorm:"unique;not null"`
+	Email     string    `json:"email" gorm:"unique;not null"`
+	Password  string    `json:"-" gorm:"not null"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Tasks     []Task    `json:"tasks,omitempty" gorm:"foreignKey:UserID"`
 }
 
 // Task model
 type Task struct {
-	ID          uint      `json:"id"`
-	Title       string    `json:"title"`
+	ID          uint      `json:"id" gorm:"primaryKey"`
+	Title       string    `json:"title" gorm:"not null"`
 	Description string    `json:"description"`
-	Completed   bool      `json:"completed"`
-	UserID      uint      `json:"user_id"`
+	Completed   bool      `json:"completed" gorm:"default:false"`
+	UserID      uint      `json:"user_id" gorm:"not null"`
+	User        User      `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// LoginRequest represents login credentials
+// Request structs
 type LoginRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-// RegisterRequest represents registration data
 type RegisterRequest struct {
-	Username string `json:"username" binding:"required"`
+	Username string `json:"username" binding:"required,min=3"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-// TaskRequest represents task creation/update data
 type TaskRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
 }
 
-// In-memory storage for Phase 1
-var (
-	users          = make(map[string]User)
-	tasks          = make(map[uint]Task)
-	userID    uint = 1
-	taskID    uint = 1
-	userMutex sync.RWMutex
-	taskMutex sync.RWMutex
-)
+// Global database instance
+var db *gorm.DB
 
 func main() {
 	// Load environment variables
@@ -69,10 +64,13 @@ func main() {
 		log.Println("No .env file found, using default values")
 	}
 
-	// Set Gin mode
-	if os.Getenv("GIN_MODE") == "release" {
-		gin.SetMode(gin.ReleaseMode)
+	// Initialize database
+	if err := initDB(); err != nil {
+		log.Fatal("Failed to initialize database:", err)
 	}
+
+	// Set Gin mode
+	gin.SetMode(gin.ReleaseMode)
 
 	// Create router
 	r := gin.Default()
@@ -93,12 +91,21 @@ func main() {
 
 	// Serve static files
 	r.Static("/static", "./static")
+
+	// Load HTML templates
 	r.LoadHTMLGlob("templates/*")
 
 	// Routes
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"title": "Go Portfolio App",
+		})
+	})
+
+	// API routes
 	api := r.Group("/api")
 	{
-		// Auth routes
+		// Public routes
 		api.POST("/register", register)
 		api.POST("/login", login)
 
@@ -115,14 +122,7 @@ func main() {
 		}
 	}
 
-	// Web routes
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title": "Go Portfolio App",
-		})
-	})
-
-	// Start server
+	// Get port from environment or use default
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -132,6 +132,50 @@ func main() {
 	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
+}
+
+func initDB() error {
+	// Database configuration
+	host := getEnv("DB_HOST", "localhost")
+	port := getEnv("DB_PORT", "5432")
+	user := getEnv("DB_USER", "postgres")
+	password := getEnv("DB_PASSWORD", "password")
+	dbname := getEnv("DB_NAME", "taskmanager")
+	sslmode := getEnv("DB_SSLMODE", "disable")
+
+	// Create DSN
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		host, port, user, password, dbname, sslmode)
+
+	// Configure GORM logger
+	gormLogger := logger.Default.LogMode(logger.Info)
+	if gin.Mode() == gin.ReleaseMode {
+		gormLogger = logger.Default.LogMode(logger.Error)
+	}
+
+	// Connect to database
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: gormLogger,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	// Auto migrate schema
+	if err := db.AutoMigrate(&User{}, &Task{}); err != nil {
+		return fmt.Errorf("failed to migrate database: %w", err)
+	}
+
+	log.Println("Database connected and migrated successfully")
+	return nil
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }
 
 func hashPassword(password string) (string, error) {
@@ -147,16 +191,20 @@ func checkPassword(password, hash string) bool {
 func register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
 		return
 	}
 
-	userMutex.Lock()
-	defer userMutex.Unlock()
+	// Check if username already exists
+	var existingUser User
+	if err := db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		return
+	}
 
-	// Check if user already exists
-	if _, exists := users[req.Username]; exists {
-		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+	// Check if email already exists
+	if err := db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
 		return
 	}
 
@@ -169,7 +217,6 @@ func register(c *gin.Context) {
 
 	// Create user
 	user := User{
-		ID:        userID,
 		Username:  req.Username,
 		Email:     req.Email,
 		Password:  hashedPassword,
@@ -177,8 +224,10 @@ func register(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
-	users[req.Username] = user
-	userID++
+	if err := db.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User created successfully",
@@ -193,15 +242,13 @@ func register(c *gin.Context) {
 func login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
 		return
 	}
 
-	userMutex.RLock()
-	user, exists := users[req.Username]
-	userMutex.RUnlock()
-
-	if !exists {
+	// Find user
+	var user User
+	if err := db.Where("username = ?", req.Username).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -212,7 +259,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Generate JWT token
+	// Generate token
 	token, err := generateToken(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
@@ -233,17 +280,13 @@ func login(c *gin.Context) {
 func getTasks(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
-	taskMutex.RLock()
-	defer taskMutex.RUnlock()
-
-	var userTasks []Task
-	for _, task := range tasks {
-		if task.UserID == userID {
-			userTasks = append(userTasks, task)
-		}
+	var tasks []Task
+	if err := db.Where("user_id = ?", userID).Order("created_at DESC").Find(&tasks).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
+		return
 	}
 
-	c.JSON(http.StatusOK, userTasks)
+	c.JSON(http.StatusOK, tasks)
 }
 
 func createTask(c *gin.Context) {
@@ -251,24 +294,23 @@ func createTask(c *gin.Context) {
 
 	var req TaskRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
 		return
 	}
 
-	taskMutex.Lock()
-	defer taskMutex.Unlock()
-
 	task := Task{
-		ID:          taskID,
 		Title:       req.Title,
 		Description: req.Description,
 		UserID:      userID,
+		Completed:   false,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
 
-	tasks[taskID] = task
-	taskID++
+	if err := db.Create(&task).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create task"})
+		return
+	}
 
 	c.JSON(http.StatusCreated, task)
 }
@@ -277,19 +319,14 @@ func getTask(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	taskIDStr := c.Param("id")
 
-	// Convert taskID string to uint (simplified)
 	var taskID uint
-	_, err := fmt.Sscanf(taskIDStr, "%d", &taskID)
-	if err != nil {
+	if _, err := fmt.Sscanf(taskIDStr, "%d", &taskID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
 		return
 	}
 
-	taskMutex.RLock()
-	task, exists := tasks[taskID]
-	taskMutex.RUnlock()
-
-	if !exists || task.UserID != userID {
+	var task Task
+	if err := db.Where("id = ? AND user_id = ?", taskID, userID).First(&task).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
@@ -301,33 +338,33 @@ func updateTask(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	taskIDStr := c.Param("id")
 
-	var req TaskRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Convert taskID string to uint (simplified)
 	var taskID uint
-	_, err := fmt.Sscanf(taskIDStr, "%d", &taskID)
-	if err != nil {
+	if _, err := fmt.Sscanf(taskIDStr, "%d", &taskID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
 		return
 	}
 
-	taskMutex.Lock()
-	defer taskMutex.Unlock()
+	var req TaskRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
 
-	task, exists := tasks[taskID]
-	if !exists || task.UserID != userID {
+	var task Task
+	if err := db.Where("id = ? AND user_id = ?", taskID, userID).First(&task).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
 
+	// Update task
 	task.Title = req.Title
 	task.Description = req.Description
 	task.UpdatedAt = time.Now()
-	tasks[taskID] = task
+
+	if err := db.Save(&task).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
+		return
+	}
 
 	c.JSON(http.StatusOK, task)
 }
@@ -336,24 +373,24 @@ func deleteTask(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	taskIDStr := c.Param("id")
 
-	// Convert taskID string to uint (simplified)
 	var taskID uint
-	_, err := fmt.Sscanf(taskIDStr, "%d", &taskID)
-	if err != nil {
+	if _, err := fmt.Sscanf(taskIDStr, "%d", &taskID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
 		return
 	}
 
-	taskMutex.Lock()
-	defer taskMutex.Unlock()
-
-	task, exists := tasks[taskID]
-	if !exists || task.UserID != userID {
+	// Check if task exists and belongs to user
+	var task Task
+	if err := db.Where("id = ? AND user_id = ?", taskID, userID).First(&task).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
 
-	delete(tasks, taskID)
+	// Delete task
+	if err := db.Delete(&task).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Task deleted successfully"})
 }
@@ -361,19 +398,8 @@ func deleteTask(c *gin.Context) {
 func getProfile(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
-	userMutex.RLock()
-	defer userMutex.RUnlock()
-
-	// Find user by ID
 	var user User
-	for _, u := range users {
-		if u.ID == userID {
-			user = u
-			break
-		}
-	}
-
-	if user.ID == 0 {
+	if err := db.First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}

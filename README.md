@@ -1,55 +1,53 @@
 # Go Portfolio Task Manager
 
-A comprehensive full-stack Go application showcasing modern web development practices, authentication, and task management capabilities. This project demonstrates proficiency in Go backend development, frontend integration, and DevOps practices.
+A comprehensive full-stack Go application showcasing modern web development practices, authentication, database management, and production-ready features. This project demonstrates proficiency in Go backend development, frontend integration, DevOps practices, and database design.
 
-## 🚀 **Phase 2: Enhanced Frontend & User Experience**
+## 🚀 **Phase 3: Database Integration & Production Features**
 
-### ✨ **New Features in Phase 2**
+### ✨ **New Features in Phase 3**
 
-#### 🎨 **Enhanced User Interface**
-- **Modern Design**: Beautiful gradient backgrounds and smooth animations
-- **Responsive Layout**: Optimized for desktop, tablet, and mobile devices
-- **Interactive Elements**: Hover effects, transitions, and visual feedback
-- **Dark Mode Support**: Automatic theme switching based on system preferences
+#### 🗄️ **Database Integration**
+- **PostgreSQL Database**: Production-ready relational database
+- **GORM ORM**: Modern Go ORM with automatic migrations
+- **Database Relationships**: Proper foreign key relationships
+- **Connection Pooling**: Optimized database connections
+- **Auto Migration**: Automatic schema creation and updates
 
-#### 🔧 **Advanced Form Features**
-- **Real-time Validation**: Instant feedback on username, email, and password input
-- **Password Strength Indicator**: Visual strength meter with color-coded feedback
-- **Form Accessibility**: Enhanced focus management and keyboard navigation
-- **Input Placeholders**: Helpful guidance text for better user experience
+#### 🔧 **Production Features**
+- **Docker Compose**: Multi-service container orchestration
+- **Environment Configuration**: Comprehensive .env support
+- **Health Checks**: Service health monitoring
+- **Database Backup**: Automated backup strategies
+- **Redis Integration**: Caching layer support
 
-#### ⌨️ **Keyboard Shortcuts**
-- **Ctrl/Cmd + K**: Quick focus on task input
-- **Ctrl/Cmd + Enter**: Submit any active form
-- **Escape**: Close modals and cancel operations
-- **Tab Navigation**: Full keyboard accessibility
+#### 🛡️ **Advanced Security**
+- **Input Validation**: Enhanced request validation
+- **SQL Injection Prevention**: Parameterized queries
+- **Database Security**: Proper user permissions
+- **Environment Variables**: Secure configuration management
 
-#### 📊 **Task Management Enhancements**
-- **Task Statistics**: Real-time counters for total, completed, and pending tasks
-- **Sorting**: Tasks automatically sorted by creation date (newest first)
-- **Modal Editing**: Inline task editing with modal dialogs
-- **Visual Indicators**: Color-coded task status and completion states
-
-#### 🎯 **User Experience Improvements**
-- **Loading States**: Smooth loading indicators for all operations
-- **Toast Notifications**: Non-intrusive success/error messages
-- **Welcome Animation**: Smooth transitions when logging in
-- **Task Cards**: Enhanced visual design with hover effects
-
-#### 🔒 **Security Enhancements**
-- **Input Sanitization**: Proper validation and sanitization
-- **Password Requirements**: Minimum length and strength validation
-- **Session Management**: Secure token handling and storage
-- **CORS Configuration**: Proper cross-origin request handling
+#### 📊 **Enhanced Testing**
+- **Integration Tests**: Full API endpoint testing
+- **Database Tests**: Real database testing
+- **Test Isolation**: Clean test environment
+- **Benchmark Tests**: Performance testing
 
 ## 🏗️ **Architecture Overview**
 
-### **Backend (Go + Gin)**
+### **Backend (Go + Gin + GORM)**
 - **RESTful API**: Clean, well-structured endpoints
 - **JWT Authentication**: Secure token-based authentication
-- **In-Memory Storage**: Fast, reliable data storage (Phase 1)
+- **PostgreSQL Database**: Production-ready data storage
+- **GORM ORM**: Modern database abstraction
 - **Middleware**: CORS, authentication, and error handling
 - **Validation**: Input validation and sanitization
+
+### **Database (PostgreSQL)**
+- **Relational Design**: Proper table relationships
+- **Indexes**: Performance optimization
+- **Migrations**: Schema version control
+- **Backup Strategy**: Data protection
+- **Connection Pooling**: Efficient resource usage
 
 ### **Frontend (HTML5 + CSS3 + JavaScript)**
 - **Vanilla JavaScript**: No framework dependencies
@@ -58,18 +56,19 @@ A comprehensive full-stack Go application showcasing modern web development prac
 - **Responsive Design**: Mobile-first approach
 - **Progressive Enhancement**: Works without JavaScript
 
-### **Development Tools**
-- **Docker**: Containerized deployment
-- **Makefile**: Development task automation
-- **Testing**: Comprehensive unit and integration tests
-- **Documentation**: Detailed API and setup documentation
+### **DevOps (Docker + Docker Compose)**
+- **Containerization**: Isolated service deployment
+- **Multi-Service**: Database, application, and cache
+- **Health Monitoring**: Service health checks
+- **Environment Management**: Development and production configs
+- **Automated Setup**: One-command deployment
 
 ## 🚀 **Quick Start**
 
 ### **Prerequisites**
 - Go 1.22 or higher
+- Docker and Docker Compose
 - Git
-- Docker (optional)
 
 ### **Installation**
 
@@ -79,29 +78,51 @@ A comprehensive full-stack Go application showcasing modern web development prac
    cd go-with-tests
    ```
 
-2. **Install dependencies**
+2. **Setup with Docker Compose (Recommended)**
    ```bash
-   go mod tidy
+   # Start all services
+   docker-compose up --build -d
+   
+   # Or use Makefile
+   make docker-run
    ```
 
-3. **Run the application**
+3. **Local Development Setup**
    ```bash
-   go run .
+   # Setup database
+   make db-setup
+   
+   # Run application
+   make run
    ```
 
 4. **Access the application**
    - Open your browser to `http://localhost:8080`
    - Register a new account or login with existing credentials
 
-### **Using Docker**
+### **Using Makefile Commands**
 
 ```bash
-# Build and run with Docker
-docker build -t go-portfolio-app .
-docker run -p 8080:8080 go-portfolio-app
+# Development
+make dev-setup    # Setup development environment
+make run          # Run application locally
+make test         # Run tests
+make test-coverage # Run tests with coverage
 
-# Or use Docker Compose
-docker-compose up --build
+# Database
+make db-setup     # Setup PostgreSQL database
+make db-reset     # Reset database
+make db-backup    # Create database backup
+
+# Docker
+make docker-run   # Start with Docker Compose
+make docker-stop  # Stop containers
+make docker-clean # Clean up resources
+
+# Utilities
+make lint         # Run linter
+make format       # Format code
+make health       # Check service health
 ```
 
 ## 📁 **Project Structure**
@@ -116,8 +137,10 @@ go-with-tests/
 ├── Dockerfile           # Container configuration
 ├── docker-compose.yml   # Multi-service setup
 ├── Makefile             # Development tasks
+├── .env                 # Environment variables
 ├── .gitignore           # Version control exclusions
 ├── README.md            # Project documentation
+├── init.sql             # Database initialization
 ├── templates/
 │   └── index.html       # Main application template
 └── static/
@@ -131,18 +154,31 @@ go-with-tests/
 
 ### **Environment Variables**
 ```bash
-# JWT Configuration
-JWT_SECRET=your-secret-key-here
-
 # Server Configuration
 PORT=8080
+GIN_MODE=release
 
-# Database Configuration (Phase 3)
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+
+# Database Configuration
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=taskmanager
 DB_USER=postgres
 DB_PASSWORD=password
+DB_SSLMODE=disable
+
+# Redis Configuration (optional)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# Security Configuration
+CORS_ORIGIN=*
+CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
+CORS_HEADERS=Origin,Content-Type,Content-Length,Accept-Encoding,X-CSRF-Token,Authorization
 ```
 
 ### **API Endpoints**
@@ -167,7 +203,7 @@ DB_PASSWORD=password
 go test -v
 
 # Run tests with coverage
-go test -cover
+go test -v -cover
 
 # Run benchmark tests
 go test -bench=.
@@ -178,27 +214,45 @@ go test -v -run TestPasswordHashing
 
 ### **Test Coverage**
 - **Unit Tests**: Core functionality testing
-- **Integration Tests**: API endpoint testing
+- **Integration Tests**: API endpoint testing with real database
 - **Benchmark Tests**: Performance testing
 - **Validation Tests**: Input validation testing
 
+### **Test Database**
+The application uses a separate test database (`taskmanager_test`) to ensure test isolation and prevent data conflicts.
+
 ## 🐳 **Docker Support**
 
-### **Building the Image**
-```bash
-docker build -t go-portfolio-app .
-```
+### **Services**
+- **PostgreSQL**: Production database
+- **Redis**: Caching layer (optional)
+- **Go Application**: Main application server
 
 ### **Running with Docker Compose**
 ```bash
-# Start the application
-docker-compose up --build
+# Start all services
+docker-compose up --build -d
 
-# Run in background
-docker-compose up -d
+# View logs
+docker-compose logs -f
 
-# Stop the application
+# Stop services
 docker-compose down
+
+# Clean up
+docker-compose down -v --remove-orphans
+```
+
+### **Database Management**
+```bash
+# Create database backup
+docker exec go-portfolio-postgres pg_dump -U postgres taskmanager > backup.sql
+
+# Restore database
+docker exec -i go-portfolio-postgres psql -U postgres taskmanager < backup.sql
+
+# Access database shell
+docker exec -it go-portfolio-postgres psql -U postgres taskmanager
 ```
 
 ## 📊 **API Documentation**
@@ -245,28 +299,29 @@ curl -X POST http://localhost:8080/api/tasks \
 - **Token Expiration**: Configurable token lifetime
 - **Secure Headers**: CORS and security headers
 
-### **Input Validation**
-- **Email Validation**: Proper email format checking
-- **Password Strength**: Minimum requirements enforcement
-- **Username Validation**: Length and format validation
-- **SQL Injection Prevention**: Parameterized queries
+### **Database Security**
+- **Input Validation**: Comprehensive request validation
+- **SQL Injection Prevention**: Parameterized queries via GORM
+- **User Permissions**: Proper database user permissions
+- **Connection Security**: SSL/TLS support
 
 ### **Data Protection**
 - **HTTPS Ready**: Secure communication support
 - **Input Sanitization**: XSS prevention
 - **CSRF Protection**: Token-based protection
-- **Rate Limiting**: Request throttling (Phase 3)
+- **Environment Variables**: Secure configuration management
 
 ## 🎯 **Portfolio Highlights**
 
 ### **Technical Skills Demonstrated**
 - ✅ **Go Development**: Modern Go practices and idioms
 - ✅ **Web Framework**: Gin framework mastery
+- ✅ **Database Design**: PostgreSQL with GORM
 - ✅ **Authentication**: JWT implementation
 - ✅ **API Design**: RESTful API development
 - ✅ **Frontend Development**: HTML5, CSS3, JavaScript
 - ✅ **Testing**: Comprehensive test coverage
-- ✅ **DevOps**: Docker and deployment
+- ✅ **DevOps**: Docker and containerization
 - ✅ **Security**: Industry-standard security practices
 
 ### **Development Practices**
@@ -277,13 +332,15 @@ curl -X POST http://localhost:8080/api/tasks \
 - ✅ **Containerization**: Docker support
 - ✅ **CI/CD Ready**: Automated testing and deployment
 
-## 🚀 **Future Enhancements (Phase 3)**
+### **Production Features**
+- ✅ **Database Integration**: PostgreSQL with GORM
+- ✅ **Multi-Service Architecture**: Docker Compose
+- ✅ **Environment Management**: Configuration management
+- ✅ **Health Monitoring**: Service health checks
+- ✅ **Backup Strategy**: Database backup procedures
+- ✅ **Performance Optimization**: Connection pooling
 
-### **Database Integration**
-- **PostgreSQL**: Production-ready database
-- **Migrations**: Database schema management
-- **Connection Pooling**: Optimized database connections
-- **Backup Strategy**: Data protection and recovery
+## 🚀 **Future Enhancements**
 
 ### **Advanced Features**
 - **Real-time Updates**: WebSocket integration
@@ -299,6 +356,14 @@ curl -X POST http://localhost:8080/api/tasks \
 - **Monitoring**: Application performance monitoring
 - **Logging**: Structured logging with ELK stack
 - **Backup**: Automated backup strategies
+- **CI/CD**: Automated deployment pipeline
+
+### **Performance Optimization**
+- **Caching**: Redis integration
+- **Database Optimization**: Query optimization
+- **Connection Pooling**: Efficient resource usage
+- **CDN**: Static asset delivery
+- **Compression**: Response compression
 
 ## 🤝 **Contributing**
 
@@ -320,4 +385,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ using Go, Gin, and modern web technologies**
+**Built with ❤️ using Go, Gin, PostgreSQL, and modern web technologies**
