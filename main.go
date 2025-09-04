@@ -64,6 +64,13 @@ func main() {
 		log.Println("No .env file found, using default values")
 	}
 
+	// Debug: Log environment variables (without sensitive data)
+	log.Printf("Environment: PORT=%s, GIN_MODE=%s",
+		os.Getenv("PORT"), os.Getenv("GIN_MODE"))
+	log.Printf("Database config: DB_HOST=%s, DB_PORT=%s, DB_NAME=%s, DB_USER=%s, DB_SSLMODE=%s",
+		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"),
+		os.Getenv("DB_USER"), os.Getenv("DB_SSLMODE"))
+
 	// Initialize database
 	if err := initDB(); err != nil {
 		log.Fatal("Failed to initialize database:", err)
@@ -143,6 +150,10 @@ func initDB() error {
 	dbname := getEnv("DB_NAME", "taskmanager")
 	sslmode := getEnv("DB_SSLMODE", "disable")
 
+	// Log database configuration (without password)
+	log.Printf("Connecting to database: host=%s port=%s user=%s dbname=%s sslmode=%s",
+		host, port, user, dbname, sslmode)
+
 	// Create DSN
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		host, port, user, password, dbname, sslmode)
@@ -153,22 +164,55 @@ func initDB() error {
 		gormLogger = logger.Default.LogMode(logger.Error)
 	}
 
-	// Connect to database
-	var err error
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormLogger,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+	// Retry connection with exponential backoff
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		// Connect to database
+		var err error
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+			Logger: gormLogger,
+		})
+		if err != nil {
+			log.Printf("Database connection attempt %d failed: %v", i+1, err)
+			if i < maxRetries-1 {
+				// Wait before retry (exponential backoff: 1s, 2s, 4s, 8s, 16s)
+				waitTime := time.Duration(1<<uint(i)) * time.Second
+				log.Printf("Retrying in %v...", waitTime)
+				time.Sleep(waitTime)
+				continue
+			}
+			return fmt.Errorf("failed to connect to database after %d attempts: %w", maxRetries, err)
+		}
+
+		// Test the connection
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Printf("Failed to get underlying sql.DB: %v", err)
+			continue
+		}
+
+		// Ping the database
+		if err := sqlDB.Ping(); err != nil {
+			log.Printf("Database ping attempt %d failed: %v", i+1, err)
+			if i < maxRetries-1 {
+				waitTime := time.Duration(1<<uint(i)) * time.Second
+				log.Printf("Retrying ping in %v...", waitTime)
+				time.Sleep(waitTime)
+				continue
+			}
+			return fmt.Errorf("failed to ping database after %d attempts: %w", maxRetries, err)
+		}
+
+		// Auto migrate schema
+		if err := db.AutoMigrate(&User{}, &Task{}); err != nil {
+			return fmt.Errorf("failed to migrate database: %w", err)
+		}
+
+		log.Println("Database connected and migrated successfully")
+		return nil
 	}
 
-	// Auto migrate schema
-	if err := db.AutoMigrate(&User{}, &Task{}); err != nil {
-		return fmt.Errorf("failed to migrate database: %w", err)
-	}
-
-	log.Println("Database connected and migrated successfully")
-	return nil
+	return fmt.Errorf("failed to connect to database after %d attempts", maxRetries)
 }
 
 func getEnv(key, defaultValue string) string {
