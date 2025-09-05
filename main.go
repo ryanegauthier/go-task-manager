@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -70,6 +71,11 @@ func main() {
 	log.Printf("Database config: DB_HOST=%s, DB_PORT=%s, DB_NAME=%s, DB_USER=%s, DB_SSLMODE=%s",
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"),
 		os.Getenv("DB_USER"), os.Getenv("DB_SSLMODE"))
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		log.Printf("DATABASE_URL found: %s", dbURL[:strings.Index(dbURL, "@")+1]+"***")
+	} else {
+		log.Printf("No DATABASE_URL found")
+	}
 
 	// Initialize database
 	if err := initDB(); err != nil {
@@ -142,6 +148,67 @@ func main() {
 }
 
 func initDB() error {
+	// Check for DATABASE_URL first (Render's preferred method)
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		log.Printf("Using DATABASE_URL for connection")
+
+		// Configure GORM logger
+		gormLogger := logger.Default.LogMode(logger.Info)
+		if gin.Mode() == gin.ReleaseMode {
+			gormLogger = logger.Default.LogMode(logger.Error)
+		}
+
+		// Retry connection with exponential backoff
+		maxRetries := 5
+		for i := 0; i < maxRetries; i++ {
+			// Connect to database using DATABASE_URL
+			var err error
+			db, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{
+				Logger: gormLogger,
+			})
+			if err != nil {
+				log.Printf("Database connection attempt %d failed: %v", i+1, err)
+				if i < maxRetries-1 {
+					waitTime := time.Duration(1<<uint(i)) * time.Second
+					log.Printf("Retrying in %v...", waitTime)
+					time.Sleep(waitTime)
+					continue
+				}
+				return fmt.Errorf("failed to connect to database after %d attempts: %w", maxRetries, err)
+			}
+
+			// Test the connection
+			sqlDB, err := db.DB()
+			if err != nil {
+				log.Printf("Failed to get underlying sql.DB: %v", err)
+				continue
+			}
+
+			// Ping the database
+			if err := sqlDB.Ping(); err != nil {
+				log.Printf("Database ping attempt %d failed: %v", i+1, err)
+				if i < maxRetries-1 {
+					waitTime := time.Duration(1<<uint(i)) * time.Second
+					log.Printf("Retrying ping in %v...", waitTime)
+					time.Sleep(waitTime)
+					continue
+				}
+				return fmt.Errorf("failed to ping database after %d attempts: %w", maxRetries, err)
+			}
+
+			// Auto migrate schema
+			if err := db.AutoMigrate(&User{}, &Task{}); err != nil {
+				return fmt.Errorf("failed to migrate database: %w", err)
+			}
+
+			log.Println("Database connected and migrated successfully")
+			return nil
+		}
+
+		return fmt.Errorf("failed to connect to database after %d attempts", maxRetries)
+	}
+
+	// Fallback to individual environment variables
 	// Database configuration
 	host := getEnv("DB_HOST", "localhost")
 	port := getEnv("DB_PORT", "5432")
@@ -151,7 +218,7 @@ func initDB() error {
 	sslmode := getEnv("DB_SSLMODE", "disable")
 
 	// Log database configuration (without password)
-	log.Printf("Connecting to database: host=%s port=%s user=%s dbname=%s sslmode=%s",
+	log.Printf("Using individual DB variables: host=%s port=%s user=%s dbname=%s sslmode=%s",
 		host, port, user, dbname, sslmode)
 
 	// Create DSN

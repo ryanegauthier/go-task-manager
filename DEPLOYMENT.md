@@ -37,6 +37,67 @@ go-task-manager/
     └── js/
 ```
 
+## 🗄️ Database Setup on Render
+
+### Option 1: Automatic Setup (Recommended)
+
+If you're using the `render.yaml` Blueprint deployment:
+
+1. **Create Blueprint**: Follow the deployment steps below
+2. **Database Creation**: Render will automatically create a PostgreSQL database
+3. **Environment Variables**: Database connection details will be auto-configured
+
+### Option 2: Manual Database Setup
+
+If you need to set up the database manually:
+
+#### Step 1: Create PostgreSQL Database
+
+1. Go to your Render dashboard
+2. Click **"New +"** → **"PostgreSQL"**
+3. Configure the database:
+   - **Name**: `go-task-manager-db`
+   - **Database**: `taskmanager`
+   - **User**: `taskmanager_user`
+   - **Plan**: Free
+4. Click **"Create Database"**
+
+#### Step 2: Get Database Connection Details
+
+1. Click on your newly created database
+2. Go to the **"Connect"** tab
+3. Copy the **"External Database URL"** - it looks like:
+   ```
+   postgresql://taskmanager_user:password@dpg-xxxxx-a.oregon-postgres.render.com:5432/taskmanager
+   ```
+
+#### Step 3: Create Web Service
+
+1. Click **"New +"** → **"Web Service"**
+2. Connect your GitHub repository
+3. Configure the service:
+   - **Name**: `go-task-manager`
+   - **Environment**: Go
+   - **Build Command**: `go mod download && go build -o bin/go-task-manager .`
+   - **Start Command**: `./bin/go-task-manager`
+   - **Plan**: Free
+
+#### Step 4: Configure Environment Variables
+
+In your web service, go to **"Environment"** tab and add:
+
+| **Key** | **Value** | **Description** |
+|---------|-----------|-----------------|
+| `PORT` | `10000` | Render's default port |
+| `GIN_MODE` | `release` | Production mode |
+| `JWT_SECRET` | `your-super-secret-jwt-key-change-in-production` | JWT signing secret |
+| `DATABASE_URL` | `postgresql://taskmanager_user:password@dpg-xxxxx-a.oregon-postgres.render.com:5432/taskmanager?sslmode=require` | Database connection URL |
+| `CORS_ORIGIN` | `*` | CORS settings |
+| `CORS_METHODS` | `GET,POST,PUT,DELETE,OPTIONS` | Allowed HTTP methods |
+| `CORS_HEADERS` | `Origin,Content-Type,Content-Length,Accept-Encoding,X-CSRF-Token,Authorization` | Allowed headers |
+
+**Important**: Replace the `DATABASE_URL` with your actual database URL from Step 2.
+
 ## 🚀 Deployment Steps
 
 ### Step 1: Sign Up for Render
@@ -45,13 +106,19 @@ go-task-manager/
 2. Click "Get Started" and sign up with your GitHub account
 3. Verify your email address
 
-### Step 2: Connect Your Repository
+### Step 2: Choose Deployment Method
 
+#### Method A: Blueprint Deployment (Automatic)
 1. In your Render dashboard, click "New +"
 2. Select "Blueprint" (for multi-service deployment)
 3. Connect your GitHub account if not already connected
 4. Select your `go-task-manager` repository
 5. Render will automatically detect the `render.yaml` file
+
+#### Method B: Manual Deployment
+1. Follow the **Manual Database Setup** steps above
+2. Create web service and configure environment variables
+3. Deploy manually
 
 ### Step 3: Configure Deployment
 
@@ -65,7 +132,7 @@ go-task-manager/
 1. Render will start building your application
 2. You can monitor the build logs in real-time
 3. The deployment process will:
-   - Create a PostgreSQL database
+   - Create a PostgreSQL database (Blueprint method)
    - Build your Go application
    - Deploy the web service
    - Configure environment variables
@@ -84,7 +151,7 @@ go-task-manager/
 
 Render automatically configures these environment variables:
 
-### Database Variables (Auto-configured)
+### Database Variables (Auto-configured with Blueprint)
 - `DB_HOST`: PostgreSQL host
 - `DB_PORT`: Database port
 - `DB_NAME`: Database name
@@ -99,6 +166,9 @@ Render automatically configures these environment variables:
 - `CORS_ORIGIN`: "*" (for development)
 - `CORS_METHODS`: "GET,POST,PUT,DELETE,OPTIONS"
 - `CORS_HEADERS`: Standard CORS headers
+
+### Manual Database Variables (if not using Blueprint)
+- `DATABASE_URL`: Complete PostgreSQL connection string
 
 ## 📊 Monitoring and Logs
 
@@ -144,9 +214,10 @@ Render automatically configures these environment variables:
 #### 2. Database Connection Issues
 **Problem**: Can't connect to PostgreSQL
 **Solution**:
-- Verify database environment variables
-- Check SSL mode configuration
+- Verify database environment variables are set correctly
+- Check if `DATABASE_URL` is properly formatted
 - Ensure database is created and accessible
+- Verify SSL mode configuration
 
 #### 3. Port Issues
 **Problem**: Application not responding
@@ -161,6 +232,14 @@ Render automatically configures these environment variables:
 - Ensure static files are copied in Dockerfile
 - Check file paths in templates
 - Verify static file serving configuration
+
+#### 5. Environment Variables Not Set
+**Problem**: Application using default values
+**Solution**:
+- Go to your service's "Environment" tab
+- Add missing environment variables
+- Ensure `DATABASE_URL` is set correctly
+- Redeploy the application
 
 ### Debugging Steps
 
@@ -183,6 +262,12 @@ Render automatically configures these environment variables:
 4. **Verify Environment Variables**
    - Check all required variables are set
    - Ensure database connection details are correct
+   - Verify `DATABASE_URL` format
+
+5. **Database Connection Test**
+   - Check if database service is running
+   - Verify database credentials
+   - Test connection from Render dashboard
 
 ## 🔒 Security Considerations
 
