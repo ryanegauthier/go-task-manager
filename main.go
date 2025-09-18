@@ -111,7 +111,7 @@ func main() {
 	// Routes
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title": "Go Portfolio App",
+			"title": "CheckMate - Task Management",
 		})
 	})
 
